@@ -1,0 +1,15 @@
+artifact_uri: file:///G:/pilot/project_2/models/mlflow/759941477200691210/ab9d92df17e64faf8915c111c9af5dee/artifacts
+end_time: 1773601787024
+entry_point_name: ''
+experiment_id: '759941477200691210'
+lifecycle_stage: active
+run_id: ab9d92df17e64faf8915c111c9af5dee
+run_name: funsd-evaluation
+run_uuid: ab9d92df17e64faf8915c111c9af5dee
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1773601786815
+status: 3
+tags: []
+user_id: hp

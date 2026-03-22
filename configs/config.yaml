@@ -1,0 +1,60 @@
+# configs/config.yaml
+# Central configuration for the Document Intelligence System
+
+# --- Paths ---
+paths:
+  raw_data: "data/raw"
+  processed_data: "data/processed"
+  annotations: "data/annotations"
+  model_checkpoints: "models/checkpoints"
+  faiss_index: "models/faiss_index.bin"
+  faiss_metadata: "models/faiss_metadata.json"
+
+# --- OCR ---
+ocr:
+  engine: "easyocr"          # options: "easyocr", "tesseract", "pdfplumber"
+  languages: ["en"]
+  confidence_threshold: 0.6  # tokens below this are flagged for review
+  dpi: 300                   # resolution for rendering scanned PDFs
+
+# --- LayoutLM ---
+layoutlm:
+  model_name: "microsoft/layoutlmv3-base"
+  max_seq_length: 512
+  fine_tuned_checkpoint: null  # set to path after fine-tuning, e.g. "models/checkpoints/layoutlmv3-funsd"
+  labels:
+    - "O"
+    - "B-HEADER"
+    - "I-HEADER"
+    - "B-QUESTION"
+    - "I-QUESTION"
+    - "B-ANSWER"
+    - "I-ANSWER"
+
+# --- Post-processing ---
+postprocessing:
+  normalize_dates: true
+  normalize_currency: true
+  min_field_confidence: 0.5
+
+# --- Embeddings ---
+embeddings:
+  model_name: "all-MiniLM-L6-v2"   # sentence-transformers model
+  chunk_size: 256                   # characters per chunk before embedding
+  chunk_overlap: 32
+
+# --- FAISS ---
+faiss:
+  index_type: "Flat"   # options: Flat (exact), IVF (approximate, faster at scale)
+  top_k: 5             # default number of results to return for a search query
+
+# --- MLflow ---
+mlflow:
+  tracking_uri: "models/mlflow"
+  experiment_name: "document-intelligence"
+
+# --- API ---
+api:
+  host: "0.0.0.0"
+  port: 8000
+  max_upload_size_mb: 20

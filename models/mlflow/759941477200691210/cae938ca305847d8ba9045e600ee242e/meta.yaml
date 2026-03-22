@@ -1,0 +1,15 @@
+artifact_uri: file:///G:/pilot/project_2/models/mlflow/759941477200691210/cae938ca305847d8ba9045e600ee242e/artifacts
+end_time: 1773598487901
+entry_point_name: ''
+experiment_id: '759941477200691210'
+lifecycle_stage: active
+run_id: cae938ca305847d8ba9045e600ee242e
+run_name: faq-composition-levy-revised.pdf
+run_uuid: cae938ca305847d8ba9045e600ee242e
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1773597976462
+status: 3
+tags: []
+user_id: hp
