@@ -119,7 +119,7 @@ def get_answer(question: str, pipeline, top_k: int = 5) -> dict:
     Retrieve relevant chunks from FAISS and answer using Claude API.
     Returns dict with answer text and source chunks.
     """
-    import anthropic
+    import groq
     import os
 
     # Step 1: Retrieve relevant chunks
@@ -140,7 +140,7 @@ def get_answer(question: str, pipeline, top_k: int = 5) -> dict:
     context = "\n\n---\n\n".join(context_parts)
 
     # Step 3: Call Claude API
-    client = anthropic.Anthropic(api_key=st.session_state.get("api_key", ""))
+    client = groq.Groq(api_key=st.session_state.get("api_key", ""))
 
     system_prompt = """You are a precise document assistant. Answer questions using ONLY the provided document chunks.
 Rules:
@@ -156,14 +156,16 @@ Question: {question}
 
 Answer based only on the above context:"""
 
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
         max_tokens=1000,
-        messages=[{"role": "user", "content": user_prompt}],
-        system=system_prompt,
+        messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
     )
 
-    answer = response.content[0].text
+    answer = response.choices[0].message.content
 
     sources = [
         {
@@ -196,7 +198,7 @@ with st.sidebar:
     api_key = st.text_input(
         "API Key",
         type="password",
-        placeholder="sk-ant-...",
+        placeholder="gsk_...",
         label_visibility="collapsed",
         help="Get your key at console.anthropic.com"
     )
