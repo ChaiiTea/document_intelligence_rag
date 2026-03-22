@@ -1,0 +1,16 @@
+﻿# Data and models
+data/
+models/
+*.bin
+*.joblib
+*.parquet
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# Misc
+run_test.py
+scripts/debug_eval.py
+scripts/check_labels.py
