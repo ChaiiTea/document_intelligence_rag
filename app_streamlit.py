@@ -1,13 +1,3 @@
-"""
-app_streamlit.py — Document Intelligence System Demo
-Combines:
-  - PDF ingestion + FAISS indexing (existing pipeline)
-  - RAG Q&A: user asks questions, answered from document context via Claude API
-
-Run from project root:
-    streamlit run app_streamlit.py
-"""
-
 import tempfile
 import time
 from pathlib import Path
@@ -16,7 +6,6 @@ import streamlit as st
 
 st.set_page_config(
     page_title="Document Intelligence",
-    page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -105,24 +94,15 @@ footer { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
-
-# ── Pipeline loader ────────────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
 def load_pipeline():
     from src.pipeline import DocumentIntelligencePipeline
     return DocumentIntelligencePipeline.from_config("configs/config.yaml")
 
-
-# ── RAG answer function ────────────────────────────────────────────────────
 def get_answer(question: str, pipeline, top_k: int = 5) -> dict:
-    """
-    Retrieve relevant chunks from FAISS and answer using Claude API.
-    Returns dict with answer text and source chunks.
-    """
     import groq
     import os
 
-    # Step 1: Retrieve relevant chunks
     hits = pipeline.search(question, top_k=top_k)
 
     if not hits:
@@ -131,7 +111,6 @@ def get_answer(question: str, pipeline, top_k: int = 5) -> dict:
             "sources": [],
         }
 
-    # Step 2: Build context from top chunks
     context_parts = []
     for i, hit in enumerate(hits):
         context_parts.append(
@@ -139,7 +118,6 @@ def get_answer(question: str, pipeline, top_k: int = 5) -> dict:
         )
     context = "\n\n---\n\n".join(context_parts)
 
-    # Step 3: Call Claude API
     client = groq.Groq(api_key=st.session_state.get("api_key", ""))
 
     system_prompt = """You are a precise document assistant. Answer questions using ONLY the provided document chunks.
@@ -174,13 +152,12 @@ Answer based only on the above context:"""
             "page": hit.chunk.page + 1,
             "score": round(hit.score, 3),
         }
-        for hit in hits[:3]   # show top 3 sources
+        for hit in hits[:3]   
     ]
 
     return {"answer": answer, "sources": sources}
 
 
-# ── Sidebar ────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
     <div style="padding:1rem 0 0.5rem 0;">
@@ -217,7 +194,6 @@ with st.sidebar:
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
-    # Indexed docs info
     if "indexed_docs" in st.session_state and st.session_state["indexed_docs"]:
         st.markdown("""
         <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:#4a4a6a;margin-bottom:0.4rem;">
@@ -228,12 +204,10 @@ with st.sidebar:
             st.markdown(f"""
             <div style="font-family:'DM Mono',monospace;font-size:0.7rem;color:#7c6af7;
                         padding:0.3rem 0;border-bottom:1px solid #1e1e2e;">
-                📄 {doc}
+                 {doc}
             </div>
             """, unsafe_allow_html=True)
 
-
-# ── Header ─────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="doc-header">
     <h1>Document <span class="accent">Intelligence</span></h1>
@@ -241,19 +215,13 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-
-# ── Two column layout ──────────────────────────────────────────────────────
 col_left, col_right = st.columns([1, 1.8], gap="large")
 
-
-# ════════════════════════════════════════
-# LEFT: Upload + Index
-# ════════════════════════════════════════
 with col_left:
     st.markdown("""
     <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;
                 color:#e8e6e0;margin-bottom:0.8rem;">
-        📄 Upload Document
+         Upload Document
     </div>
     """, unsafe_allow_html=True)
 
@@ -301,7 +269,6 @@ with col_left:
                 finally:
                     tmp_path.unlink(missing_ok=True)
 
-    # Stats
     if "last_stats" in st.session_state:
         s = st.session_state["last_stats"]
         st.markdown(f"""
@@ -317,12 +284,11 @@ with col_left:
         </div>
         """, unsafe_allow_html=True)
 
-    # Suggested questions
     if "indexed_docs" in st.session_state and st.session_state["indexed_docs"]:
         st.markdown("""
         <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;
                     color:#e8e6e0;margin:1.2rem 0 0.6rem 0;">
-            💡 Try asking
+             Try asking
         </div>
         """, unsafe_allow_html=True)
 
@@ -340,23 +306,17 @@ with col_left:
                 st.session_state["pending_question"] = s
                 st.rerun()
 
-
-# ════════════════════════════════════════
-# RIGHT: Chat interface
-# ════════════════════════════════════════
 with col_right:
     st.markdown("""
     <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;
                 color:#e8e6e0;margin-bottom:0.8rem;">
-        💬 Ask your document
+         Ask your document
     </div>
     """, unsafe_allow_html=True)
 
-    # Init chat history
     if "messages" not in st.session_state:
         st.session_state["messages"] = []
 
-    # Chat container
     chat_container = st.container()
 
     with chat_container:
@@ -376,7 +336,7 @@ with col_right:
                     sources_html = ""
                     if msg.get("sources"):
                         chips = "".join([
-                            f'<span class="source-chip">📄 {s["pdf"]} p.{s["page"]} · {s["score"]}</span>'
+                            f'<span class="source-chip"> {s["pdf"]} p.{s["page"]} · {s["score"]}</span>'
                             for s in msg["sources"]
                         ])
                         sources_html = f'<div class="msg-source">Sources: {chips}</div>'
@@ -385,7 +345,6 @@ with col_right:
                         unsafe_allow_html=True
                     )
 
-    # Handle pending question from suggestion buttons
     if "pending_question" in st.session_state:
         pending = st.session_state.pop("pending_question")
         st.session_state["messages"].append({"role": "user", "content": pending})
@@ -393,13 +352,13 @@ with col_right:
         if not st.session_state.get("api_key"):
             st.session_state["messages"].append({
                 "role": "assistant",
-                "content": "⚠️ Please enter your Anthropic API key in the sidebar.",
+                "content": "Please enter your API key in the sidebar.",
                 "sources": [],
             })
         elif "indexed_docs" not in st.session_state or not st.session_state["indexed_docs"]:
             st.session_state["messages"].append({
                 "role": "assistant",
-                "content": "⚠️ Please upload and index a PDF first.",
+                "content": "Please upload and index a PDF first.",
                 "sources": [],
             })
         else:
@@ -420,7 +379,6 @@ with col_right:
                     })
         st.rerun()
 
-    # Input box
     st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
     with st.form("chat_form", clear_on_submit=True):
         col_input, col_send = st.columns([5, 1])
@@ -439,13 +397,13 @@ with col_right:
         if not st.session_state.get("api_key"):
             st.session_state["messages"].append({
                 "role": "assistant",
-                "content": "⚠️ Please enter your Anthropic API key in the sidebar.",
+                "content": " Please enter your Anthropic API key in the sidebar.",
                 "sources": [],
             })
         elif "indexed_docs" not in st.session_state or not st.session_state["indexed_docs"]:
             st.session_state["messages"].append({
                 "role": "assistant",
-                "content": "⚠️ Please upload and index a PDF first.",
+                "content": " Please upload and index a PDF first.",
                 "sources": [],
             })
         else:

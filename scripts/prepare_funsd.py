@@ -10,7 +10,6 @@ def download_funsd():
     print("[prepare_funsd] Downloading FUNSD from HuggingFace...")
     ds = load_dataset("nielsr/funsd-layoutlmv3")
  
-    # Inspect actual field names so we can map correctly
     sample = ds["train"][0]
     print(f"[prepare_funsd] Available fields: {list(sample.keys())}")
  
@@ -19,7 +18,6 @@ def download_funsd():
     for split in ("train", "test"):
         records = []
         for example in ds[split]:
-            # Safely grab whichever field names the dataset uses
             words  = example.get("words") or example.get("tokens") or []
             bboxes = example.get("bboxes") or example.get("bbox") or []
             labels = (

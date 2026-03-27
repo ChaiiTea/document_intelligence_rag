@@ -6,10 +6,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
  
 FUNSD_TEST = Path("data/annotations/funsd/test.json")
  
-# FUNSD integer label mapping (from nielsr/funsd-layoutlmv3)
 ID2LABEL = {0: "O", 1: "B-HEADER", 2: "I-HEADER", 3: "B-QUESTION", 4: "I-QUESTION", 5: "B-ANSWER", 6: "I-ANSWER"}
 LABEL2ID = {v: k for k, v in ID2LABEL.items()}
-# Also keep stripped labels as fallback
 LABEL2ID.update({"ANSWER": 5, "QUESTION": 3, "HEADER": 1})
 LABEL_LIST = [ID2LABEL[i] for i in sorted(ID2LABEL)]
  
@@ -22,7 +20,6 @@ def load_funsd_test() -> list[dict]:
         data = json.load(f)
     print(f"Loaded {len(data)} test documents from {FUNSD_TEST}")
  
-    # Normalise field names — dataset uses 'tokens', we want 'words'
     for ex in data:
         if "words" not in ex or not ex["words"]:
             ex["words"] = ex.get("tokens", [])
@@ -30,7 +27,6 @@ def load_funsd_test() -> list[dict]:
  
  
 def baseline_predict(example: dict) -> list[int]:
-    """Predict O for every token — naive baseline."""
     return [LABEL2ID["O"]] * len(example["words"])
  
  
@@ -40,7 +36,6 @@ def model_predict(example: dict, extractor) -> list[int]:
     words = example["words"]
     bboxes = example["bboxes"]
  
-    # Keep a flat index→token mapping so we can map spans back reliably
     tokens = []
     for word, bbox in zip(words, bboxes):
         tokens.append(Token(
@@ -52,12 +47,10 @@ def model_predict(example: dict, extractor) -> list[int]:
  
     page = PageTokens(page_number=0, width=1000, height=1000, tokens=tokens)
  
-    # Build a lookup: token object id → index in our list
     token_id_to_idx = {id(t): i for i, t in enumerate(tokens)}
  
     result = extractor.extract([page], pdf_name=str(example.get("id", "")))
  
-    # Map spans back to per-token labels using object identity (no bbox float drift)
     token_labels = ["O"] * len(tokens)
     for span in result.spans:
         label = span.label
@@ -76,7 +69,6 @@ def evaluate():
  
     examples = load_funsd_test()
  
-    # Quick sanity check on label types
     sample_labels = examples[0]["labels"]
     print(f"Sample labels (first 5): {sample_labels[:5]}")
     print(f"Label type: {type(sample_labels[0])}")
@@ -88,7 +80,7 @@ def evaluate():
     for i, ex in enumerate(examples):
         print(f"Processing doc {i+1}/{len(examples)}: {ex.get('id', '')} ({len(ex['words'])} tokens)")
  
-        true_labels = ex["labels"]  # these are already ints from HuggingFace
+        true_labels = ex["labels"]  
         baseline_preds = baseline_predict(ex)
         model_preds = model_predict(ex, extractor)
  

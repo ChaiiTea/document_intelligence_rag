@@ -1,13 +1,3 @@
-"""
-Stage 5 & 6: Embedding generation and FAISS vector index.
-
-Workflow:
-  - Chunk extracted document text into overlapping windows.
-  - Encode each chunk with sentence-transformers.
-  - Store vectors in a FAISS index (persisted to disk).
-  - Provide semantic search: query → top-k matching chunks + source metadata.
-"""
-
 from __future__ import annotations
 
 import json
@@ -21,38 +11,25 @@ from loguru import logger
 from src.postprocessing.cleaner import ProcessedDocument
 
 
-# ---------------------------------------------------------------------------
-# Data structures
-# ---------------------------------------------------------------------------
-
 @dataclass
 class Chunk:
     text: str
     pdf_name: str
     page: int
     chunk_index: int
-    label: Optional[str] = None   # originating LayoutLM label, if available
+    label: Optional[str] = None  
 
 
 @dataclass
 class SearchResult:
     chunk: Chunk
-    score: float      # cosine similarity (higher = more similar)
-
-
-# ---------------------------------------------------------------------------
-# Text chunking
-# ---------------------------------------------------------------------------
+    score: float      
 
 def _chunk_text(
     text: str,
     chunk_size: int = 256,
     overlap: int = 32,
 ) -> list[str]:
-    """
-    Split text into overlapping character-level windows.
-    Simple but effective for FAISS indexing of short document fields.
-    """
     chunks = []
     start = 0
     while start < len(text):
@@ -65,7 +42,6 @@ def _chunk_text(
 
 
 def document_to_chunks(doc: ProcessedDocument, chunk_size: int = 256, overlap: int = 32) -> list[Chunk]:
-    """Convert a ProcessedDocument into a flat list of text chunks."""
     chunks: list[Chunk] = []
     chunk_idx = 0
 
@@ -89,12 +65,7 @@ def document_to_chunks(doc: ProcessedDocument, chunk_size: int = 256, overlap: i
     return chunks
 
 
-# ---------------------------------------------------------------------------
-# Embedding model (sentence-transformers)
-# ---------------------------------------------------------------------------
-
 class EmbeddingModel:
-    """Thin wrapper around a sentence-transformers model."""
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
         self.model_name = model_name
@@ -114,32 +85,13 @@ class EmbeddingModel:
             texts,
             batch_size=batch_size,
             show_progress_bar=len(texts) > 100,
-            normalize_embeddings=True,   # unit vectors → dot product == cosine sim
+            normalize_embeddings=True,   
             convert_to_numpy=True,
         )
         return embeddings.astype("float32")
 
 
-# ---------------------------------------------------------------------------
-# FAISS index manager
-# ---------------------------------------------------------------------------
-
 class FAISSIndex:
-    """
-    Manages a FAISS flat index with a parallel metadata store.
-
-    The metadata store maps integer FAISS IDs → Chunk objects,
-    saved alongside the index as a JSON file.
-
-    Usage:
-        index = FAISSIndex()
-        index.add(chunks, embeddings)
-        index.save("models/faiss_index.bin", "models/faiss_metadata.json")
-
-        # Later:
-        index = FAISSIndex.load("models/faiss_index.bin", "models/faiss_metadata.json")
-        results = index.search(query_embedding, top_k=5)
-    """
 
     def __init__(self, dim: Optional[int] = None):
         self._index = None
@@ -149,11 +101,10 @@ class FAISSIndex:
     def _init_index(self, dim: int):
         import faiss
         self._dim = dim
-        self._index = faiss.IndexFlatIP(dim)   # Inner product on unit vectors = cosine
+        self._index = faiss.IndexFlatIP(dim)   
         logger.info(f"[FAISSIndex] Initialised Flat IP index (dim={dim})")
 
     def add(self, chunks: list[Chunk], embeddings: np.ndarray):
-        """Add pre-computed embeddings with their associated chunks."""
         if self._index is None:
             self._init_index(embeddings.shape[1])
 
@@ -162,16 +113,6 @@ class FAISSIndex:
         logger.info(f"[FAISSIndex] Added {len(chunks)} vectors. Total: {self._index.ntotal}")
 
     def search(self, query_embedding: np.ndarray, top_k: int = 5) -> list[SearchResult]:
-        """
-        Find the top-k most similar chunks for a query embedding.
-
-        Args:
-            query_embedding: Shape (1, dim) float32 numpy array.
-            top_k:           Number of results to return.
-
-        Returns:
-            List of SearchResult, sorted by descending similarity.
-        """
         if self._index is None or self._index.ntotal == 0:
             logger.warning("[FAISSIndex] Index is empty.")
             return []
@@ -211,22 +152,7 @@ class FAISSIndex:
         return obj
 
 
-# ---------------------------------------------------------------------------
-# High-level indexing pipeline
-# ---------------------------------------------------------------------------
-
 class DocumentIndexer:
-    """
-    End-to-end: ProcessedDocument → chunks → embeddings → FAISS index.
-
-    Usage:
-        indexer = DocumentIndexer()
-        indexer.index_document(processed_doc)
-        indexer.save("models/faiss_index.bin", "models/faiss_metadata.json")
-
-        results = indexer.search("invoice total amount", top_k=5)
-    """
-
     def __init__(
         self,
         embedding_model: str = "all-MiniLM-L6-v2",

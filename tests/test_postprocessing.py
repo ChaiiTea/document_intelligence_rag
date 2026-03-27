@@ -1,13 +1,3 @@
-"""
-tests/test_postprocessing.py
-
-Unit tests for the OCR cleaning and normalisation logic.
-No model loading required — pure function tests.
-
-Run:
-    pytest tests/test_postprocessing.py -v
-"""
-
 import pytest
 from src.postprocessing.cleaner import (
     clean_ocr_text,
@@ -19,11 +9,6 @@ from src.postprocessing.cleaner import (
 )
 from src.extraction.layoutlm import ExtractionResult, LabeledSpan
 from src.ocr.pdf_loader import Token
-
-
-# ---------------------------------------------------------------------------
-# clean_ocr_text
-# ---------------------------------------------------------------------------
 
 class TestCleanOCRText:
     def test_collapses_whitespace(self):
@@ -42,11 +27,6 @@ class TestCleanOCRText:
     def test_empty_string(self):
         assert clean_ocr_text("") == ""
 
-
-# ---------------------------------------------------------------------------
-# is_noise
-# ---------------------------------------------------------------------------
-
 class TestIsNoise:
     def test_empty_is_noise(self):
         assert is_noise("") is True
@@ -59,11 +39,6 @@ class TestIsNoise:
 
     def test_number_not_noise(self):
         assert is_noise("12345") is False
-
-
-# ---------------------------------------------------------------------------
-# normalize_date
-# ---------------------------------------------------------------------------
 
 class TestNormalizeDate:
     @pytest.mark.parametrize("raw, expected", [
@@ -81,11 +56,6 @@ class TestNormalizeDate:
     def test_empty_returns_none(self):
         assert normalize_date("") is None
 
-
-# ---------------------------------------------------------------------------
-# normalize_currency
-# ---------------------------------------------------------------------------
-
 class TestNormalizeCurrency:
     def test_usd_symbol(self):
         result = normalize_currency("$1,234.56")
@@ -101,11 +71,6 @@ class TestNormalizeCurrency:
 
     def test_no_currency_returns_none(self):
         assert normalize_currency("hello world") is None
-
-
-# ---------------------------------------------------------------------------
-# PostProcessor integration
-# ---------------------------------------------------------------------------
 
 def _make_extraction_result(spans: list[LabeledSpan]) -> ExtractionResult:
     return ExtractionResult(pdf_name="test.pdf", pages=1, spans=spans)
